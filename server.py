@@ -6,7 +6,7 @@ PORT=int(os.environ.get("PORT","8000"))
 MAX_BYTES=32*1024*1024
 
 class Handler(BaseHTTPRequestHandler):
-    def headers(self,code,kind="application/json",size=None):
+    def send_headers(self,code,kind="application/json",size=None):
         self.send_response(code)
         self.send_header("Content-Type",kind)
         self.send_header("Access-Control-Allow-Origin","*")
@@ -14,13 +14,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers","Content-Type")
         if size is not None:self.send_header("Content-Length",str(size))
         self.end_headers()
-    def do_OPTIONS(self):self.headers(204)
+    def do_OPTIONS(self):self.send_headers(204)
     def do_GET(self):
         body=b'{"status":"ok"}'
-        self.headers(200,size=len(body));self.wfile.write(body)
+        self.send_headers(200,size=len(body));self.wfile.write(body)
     def do_POST(self):
         if self.path!="/generate":
-            self.headers(404);self.wfile.write(b'{"error":"Ruta inexistente"}');return
+            self.send_headers(404)
         try:
             n=int(self.headers.get("Content-Length","0"))
             if not 0<n<MAX_BYTES:raise ValueError("Archivo demasiado grande")
@@ -50,9 +50,9 @@ class Handler(BaseHTTPRequestHandler):
                 run=subprocess.run(cmd,capture_output=True,text=True,timeout=240)
                 if run.returncode:raise RuntimeError(run.stderr[-500:])
                 result=(d/"video.mp4").read_bytes()
-            self.headers(200,"video/mp4",len(result));self.wfile.write(result)
+            self.send_headers(200,"video/mp4",len(result))
         except Exception as e:
             body=json.dumps({"error":str(e)},ensure_ascii=False).encode()
-            self.headers(400,size=len(body));self.wfile.write(body)
+            self.send_headers(400,size=len(body))
 if __name__=="__main__":
     ThreadingHTTPServer(("0.0.0.0",PORT),Handler).serve_forever()
