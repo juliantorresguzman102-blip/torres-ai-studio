@@ -15,4 +15,4 @@ ENV PORT=10000
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} server:app"]
+CMD ["python", "server.py"]
