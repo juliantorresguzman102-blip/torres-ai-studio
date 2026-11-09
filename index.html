@@ -1,7 +1,103 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090e1b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Torres AI"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icon.png"><title>Torres AI Studio</title><style>
-:root{font-family:Inter,system-ui,Arial;background:#090e1b;color:#e9f1ff}*{box-sizing:border-box}body{margin:0}header{border-bottom:1px solid #26334a;padding:22px 5%;display:flex;justify-content:space-between;align-items:center}h1{font-size:23px;margin:0}header span{color:#70d4ee;font-size:12px}main{max-width:1150px;margin:35px auto;padding:0 22px;display:grid;grid-template-columns:1fr 1fr;gap:25px}.panel{background:#121c2e;border:1px solid #2b3951;border-radius:20px;padding:24px}h2{margin:0 0 20px;font-size:19px}label{display:block;margin:19px 0 8px;font-size:14px;color:#b8c8dd}input,textarea,select{width:100%;background:#0c1423;border:1px solid #34445e;border-radius:11px;padding:13px;color:white;font:inherit}textarea{min-height:130px;resize:vertical}button{width:100%;padding:15px;border:0;border-radius:12px;background:#58cde8;color:#06111d;font-size:15px;font-weight:800;cursor:pointer;margin-top:23px}button:disabled{opacity:.5;cursor:wait}.hint{font-size:12px;color:#8ea4be;line-height:1.6}.preview{min-height:380px;background:radial-gradient(circle at center,#233b5a,#0a1120);border:1px dashed #49617b;border-radius:14px;display:grid;place-items:center;overflow:hidden}.preview img{max-width:100%;max-height:410px;object-fit:contain}.empty{text-align:center;color:#92a6bf;padding:30px}.empty strong{font-size:50px;display:block;margin-bottom:15px}.status{font-size:13px;color:#79dbed;min-height:24px;margin-top:14px}video{width:100%;border-radius:14px;margin-top:18px}a.download{display:block;text-align:center;color:#73d7ef;margin-top:15px}footer{text-align:center;color:#71859f;font-size:12px;padding:25px}@media(max-width:800px){main{grid-template-columns:1fr;margin:15px auto}.preview{min-height:260px}header{padding:18px}}
-@media(max-width:800px){input,textarea,select{font-size:16px}button{min-height:52px}main{padding:0 12px}.panel{padding:18px}body{padding-bottom:env(safe-area-inset-bottom)}}
-</style></head><body><header><h1>✦ TORRES <span>AI STUDIO</span></h1><span>VERSIÓN 2 · SERVIDOR DE VIDEO</span></header><main><section class="panel"><h2>Crear un nuevo video</h2><label>1. Imagen del personaje</label><input id="image" type="file" accept="image/png,image/jpeg,image/webp" required><label>2. Guion y subtítulos</label><textarea id="script" placeholder="Escribí aquí lo que dice tu personaje..."></textarea><label>3. Voz grabada o generada (MP3, WAV, M4A)</label><input id="audio" type="file" accept="audio/*"><p class="hint">Para que el MP4 tenga sonido, cargá un archivo de audio. En esta versión la voz no se crea automáticamente a partir del texto.</p><label>4. Formato del video</label><select id="format"><option value="vertical">Vertical 9:16 · TikTok / Reels / Shorts</option><option value="horizontal">Horizontal 16:9 · YouTube</option></select><label>Duración si no agregás audio</label><select id="duration"><option value="8">8 segundos</option><option value="15">15 segundos</option><option value="30">30 segundos</option></select><label>Dirección del servidor de video</label><input id="api" type="url" placeholder="https://tu-servidor.com"><p class="hint">GitHub Pages muestra la aplicación, pero necesita un servidor de video independiente.</p><button id="generate">Generar video MP4</button><div id="status" class="status"></div></section><section class="panel"><h2>Vista previa</h2><div id="preview" class="preview"><div class="empty"><strong>✦</strong>Tu personaje aparecerá aquí al cargar una imagen.</div></div><video id="video" controls hidden></video><a id="download" class="download" hidden download="torres-ai-studio.mp4">Descargar video MP4</a><p class="hint">Primera versión funcional: composición de imagen, movimiento suave, indicador visual de voz, subtítulos y exportación. Esta versión produce movimiento de cámara suave, audio y subtítulos. No anima labios ni rostro con IA.</p></section></main><footer>TORRES AI STUDIO · Tus videos, tu proyecto, tu control</footer><script>
-const $=id=>document.getElementById(id);$('api').value=localStorage.getItem('torres_api_url')||'';$('api').onchange=()=>localStorage.setItem('torres_api_url',$('api').value.trim());let url=null;function toData(file){return new Promise((resolve,reject)=>{let r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)})} $('image').onchange=async()=>{let f=$('image').files[0];if(f)$('preview').innerHTML='<img alt="Personaje" src="'+await toData(f)+'">'};$('generate').onclick=async()=>{let f=$('image').files[0];if(!f){$('status').textContent='Primero cargá una imagen.';return}let b=$('generate');b.disabled=true;$('status').textContent='Procesando video... Puede tardar unos minutos.';try{let a=$('audio').files[0];let body={image:await toData(f),audio:a?await toData(a):null,script:$('script').value,format:$('format').value,duration:$('duration').value};let res=await fetch(($('api').value.trim()||'http://localhost:8000').replace(/\/$/,'')+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){let err=await res.json();throw Error(err.error||'Error desconocido')}let blob=await res.blob();if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(blob);$('video').src=url;$('video').hidden=false;$('download').href=url;$('download').hidden=false;$('status').textContent='¡Video generado correctamente!';}catch(e){$('status').textContent='Error: '+e.message}finally{b.disabled=false}};
-if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(()=>{});}
-</script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090f1d">
+<meta name="description" content="Torres AI Studio: convertí una foto, un guion y una voz en un video MP4.">
+<title>Torres AI Studio | Estudio de video</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:#080e1a;color:#edf5ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% -15%,#193355 0,#0b1222 43%,#080e1a 85%);min-height:100svh}
+header{border-bottom:1px solid #263449;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:20px max(22px,calc((100% - 1100px)/2));background:#0b1423b9}
+.brand{font-weight:900;font-size:21px;letter-spacing:.04em}.brand span{color:#70d4ee}.tag{padding:7px 11px;border:1px solid #355c70;border-radius:100px;background:#112c40;font-size:11px;font-weight:700;color:#8ee4ed}
+main{max-width:1140px;margin:32px auto;padding:0 20px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
+.panel{background:#111c2d;border:1px solid #2b4058;border-radius:20px;padding:25px;box-shadow:0 18px 45px #0002}
+h1{font-size:23px;line-height:1.25;margin:0 0 9px}h2{font-size:20px;margin:0 0 12px}.intro{font-size:13px;color:#a8bed4;line-height:1.65;margin:0 0 17px}
+label{display:block;font-size:13px;color:#c1d6e7;margin:16px 0 7px;font-weight:650}input,select,textarea{font:inherit;color:#f2f7ff;background:#0a1324;border:1px solid #3a4d64;border-radius:11px;width:100%;padding:12px;min-width:0}
+textarea{min-height:118px;resize:vertical;line-height:1.5}input[type=file]{font-size:13px;cursor:pointer}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid #67cce7;outline-offset:2px}
+.help{font-size:11.5px;line-height:1.55;color:#90abc4;margin:7px 0 0}
+.box{padding:12px 14px;background:#0c2033;border:1px solid #244661;border-radius:12px;margin:13px 0;color:#b2cfe1;font-size:12px;line-height:1.55}
+button.primary{border:0;border-radius:12px;background:linear-gradient(110deg,#67d4ee,#8af7d7);color:#092138;font:inherit;font-size:15px;font-weight:900;padding:15px;width:100%;margin-top:22px;cursor:pointer}
+button.primary:disabled{opacity:.5;cursor:wait}.status{font-size:13px;min-height:22px;line-height:1.6;color:#9be5ea;margin:13px 0 0;overflow-wrap:anywhere}
+.preview{min-height:390px;border:1px dashed #365574;border-radius:15px;background:radial-gradient(ellipse at center,#213652,#0a1221 76%);display:grid;place-items:center;overflow:hidden}
+.preview img{display:block;max-width:100%;max-height:400px;object-fit:contain}.empty{text-align:center;padding:25px;color:#b0c4d7}.empty b{display:block;font-size:56px;color:#6acde0;margin:0 0 12px}
+video{display:block;width:100%;max-height:420px;object-fit:contain;border-radius:13px;margin:20px 0 0;background:#000}video[hidden],a[hidden]{display:none}
+.download{display:block;border:1px solid #4a9dae;color:#9ce7eb;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;padding:14px;margin-top:15px}
+details{margin-top:20px;font-size:12px;color:#b2cadc}summary{cursor:pointer}.small{font-size:12px;color:#a5bad2;line-height:1.6;margin-top:20px}
+footer{text-align:center;color:#788ca7;font-size:12px;padding:18px 20px 30px}
+@media(max-width:800px){main{grid-template-columns:1fr;gap:14px;margin:17px auto;padding:0 13px}.panel{padding:18px}.preview{min-height:260px}header{padding:17px 16px}.tag{font-size:10px}.brand{font-size:18px}input,textarea,select{font-size:16px}button.primary{min-height:51px}}
+</style>
+</head>
+<body>
+<header><div class="brand">✦ TORRES <span>AI STUDIO</span></div><span class="tag">MVP · VIDEO + VOZ</span></header>
+<main>
+<section class="panel">
+<h1>Creá tu próximo video</h1>
+<p class="intro">Subí una foto, escribí el guion y elegí una narración. El sistema produce un MP4 con movimiento suave de cámara, voz y texto. <strong>No anima los labios ni el rostro de la foto.</strong></p>
+<label for="image">1. Foto del personaje</label>
+<input id="image" type="file" accept="image/png,image/jpeg,image/webp" required>
+<p class="help">JPG, PNG o WebP; máximo 8 MB. Usá fotos propias o con permiso.</p>
+<label for="script">2. Guion</label>
+<textarea id="script" maxlength="420" placeholder="Hola, bienvenidos a nuestro canal. Hoy te voy a contar una historia increíble..."></textarea>
+<p class="help">Máximo 420 caracteres para mantener la generación rápida.</p>
+<label for="voice">3. Voz para el video</label>
+<select id="voice">
+<option value="tts" selected>Generar narración automática en español (voz básica)</option>
+<option value="upload">Usar mi audio grabado (MP3, WAV, M4A)</option>
+<option value="none">Sin voz, solo video</option>
+</select>
+<div id="audioArea" hidden><label for="audio">Archivo de audio</label><input id="audio" type="file" accept="audio/*"><p class="help">Máximo 10 MB. Con audio, el video toma la duración de la grabación.</p></div>
+<p id="voiceHelp" class="help">Narración gratuita realizada en el servidor con una voz sintética básica, no una voz natural de IA.</p>
+<label for="format">4. Formato</label>
+<select id="format"><option value="vertical">Vertical 9:16 · Reels / TikTok / Shorts</option><option value="horizontal">Horizontal 16:9 · YouTube</option></select>
+<label for="duration">5. Duración (si elegís «Sin voz»)</label>
+<select id="duration"><option value="8">8 segundos</option><option value="15">15 segundos</option><option value="30">30 segundos</option></select>
+<div class="box">En el alojamiento gratuito, cada video puede tardar unos minutos. La primera solicitud puede demorar mientras el servidor se inicia.</div>
+<details><summary>Configuración avanzada del servidor</summary><label for="api">Servidor</label><input id="api" type="url" value="https://torres-ai-studio.onrender.com"><p class="help">URL del servicio Render. No necesitás cambiarla normalmente.</p></details>
+<button class="primary" id="generate">Generar video MP4</button>
+<p id="status" class="status" role="status" aria-live="polite"></p>
+</section>
+<section class="panel">
+<h2>Vista previa</h2>
+<div class="preview" id="preview"><div class="empty"><b>✦</b>La imagen del personaje aparecerá aquí.</div></div>
+<video id="video" controls playsinline hidden></video>
+<a id="download" class="download" download="Torres_AI_Studio_video.mp4" hidden>Descargar MP4</a>
+<p class="small"><strong>Qué hace esta versión:</strong> combina una imagen con zoom suave, texto por secciones y narración. La animación facial real y la sincronización de labios son una etapa posterior que requiere un modelo especializado y más capacidad de cómputo.</p>
+</section>
+</main>
+<footer>TORRES AI STUDIO · Tu estudio de videos</footer>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const DEFAULT_API='https://torres-ai-studio.onrender.com';
+let cached='';try{cached=localStorage.getItem('torres_ai_api')||''}catch(e){}
+$('api').value=(/^https:\/\//i.test(cached)?cached:DEFAULT_API);
+$('api').addEventListener('change',()=>{try{localStorage.setItem('torres_ai_api',$('api').value.trim())}catch(e){}});
+let photoUrl=null,videoUrl=null;
+const voice=$('voice'),audioArea=$('audioArea');
+function voiceChange(){audioArea.hidden=voice.value!=='upload';$('voiceHelp').textContent=voice.value==='tts'?'Voz sintética básica en español, no voz neuronal de estudio.':voice.value==='upload'?'Tu grabación quedará incorporada al MP4.':'Se generará un video mudo.'}
+voice.addEventListener('change',voiceChange);voiceChange();
+$('image').addEventListener('change',()=>{const f=$('image').files[0];if(photoUrl)URL.revokeObjectURL(photoUrl);if(!f)return;photoUrl=URL.createObjectURL(f);const im=document.createElement('img');im.src=photoUrl;im.alt='Foto seleccionada';$('preview').replaceChildren(im)});
+function dataUrl(f){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('No se pudo leer el archivo.'));reader.readAsDataURL(f)})}
+async function generate(){const image=$('image').files[0],script=$('script').value.trim(),voiceMode=voice.value,audio=$('audio').files[0],status=$('status');
+if(!image){status.textContent='Seleccioná primero una foto.';return}
+if(image.size>8*1024*1024){status.textContent='La foto pesa más de 8 MB.';return}
+if(voiceMode==='tts'&&!script){status.textContent='Escribí el guion para generar la narración.';return}
+if(voiceMode==='upload'&&!audio){status.textContent='Elegí el archivo de audio o cambiá el modo de voz.';return}
+if(voiceMode==='upload'&&audio.size>10*1024*1024){status.textContent='El audio supera los 10 MB.';return}
+const button=$('generate');button.disabled=true;status.textContent='Preparando archivos y enviando al servidor...';
+try{const base=$('api').value.trim().replace(/\/+$/,'');if(!/^https:\/\//i.test(base))throw Error('La dirección del servidor debe empezar por https://');
+const body={image:await dataUrl(image),script,voice_mode:voiceMode,audio:voiceMode==='upload'?await dataUrl(audio):null,format:$('format').value,duration:Number($('duration').value)};
+status.textContent='Generando video... El servidor puede tardar unos minutos.';
+const abort=new AbortController();const handle=setTimeout(()=>abort.abort(),195000);
+let response;try{response=await fetch(base+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:abort.signal,mode:'cors'})}finally{clearTimeout(handle)}
+if(!response.ok){let detail='El servidor respondió '+response.status;try{const obj=await response.json();detail=obj.error||detail}catch(e){}throw Error(detail)}
+const type=response.headers.get('Content-Type')||'';if(!type.includes('video/mp4'))throw Error('El servidor no devolvió un video MP4.');const blob=await response.blob();if(blob.size<200)throw Error('El archivo recibido está vacío.');
+if(videoUrl)URL.revokeObjectURL(videoUrl);videoUrl=URL.createObjectURL(blob);$('video').src=videoUrl;$('video').hidden=false;$('download').href=videoUrl;$('download').hidden=false;status.textContent='¡Video listo! Reproducilo o tocá Descargar MP4.'
+}catch(e){status.textContent=e.name==='AbortError'?'La generación superó el tiempo máximo. Probá con un guion más corto.':'Error: '+e.message}finally{button.disabled=false}}
+$('generate').addEventListener('click',generate);
+})();
+</script>
+</body></html>
